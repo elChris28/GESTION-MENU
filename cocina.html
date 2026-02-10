@@ -12,8 +12,9 @@
     <div id="kitchenDisplay" class="kitchen-grid"></div>
 
     <script>
-        const socket = io();
+const socket = io();
         let lastOrderCount = 0;
+        let currentQueue = []; // <--- Variable para guardar los pedidos localmente
 
         function getTimerData(timestampEntrada) {
             const transcurrido = Date.now() - parseInt(timestampEntrada);
@@ -30,11 +31,12 @@
             return { tiempo, color, prefijo: restante < 0 ? "RETRASO: +" : "" };
         }
 
-        function renderKitchen(queue) {
+        function renderKitchen() {
             const display = document.getElementById('kitchenDisplay');
+            if (!display) return;
             display.innerHTML = '';
 
-            queue.forEach((ticket, index) => {
+            currentQueue.forEach((ticket, index) => {
                 const timer = getTimerData(ticket.timestamp);
                 const itemsHtml = ticket.items.map(item => `
                     <div style="border-bottom: 1px solid rgba(0,0,0,0.1); padding: 5px 0;">
@@ -62,24 +64,29 @@
         }
 
         function removeTicket(index) {
-            socket.emit('pedido-listo', index); // Avisa al servidor para borrarlo en todos los celus
+            socket.emit('pedido-listo', index);
         }
 
-        // ESCUCHAR AL SERVIDOR
+        // --- ESCUCHAR AL SERVIDOR ---
         socket.on('actualizar-cocina', (queue) => {
             if (queue.length > lastOrderCount) anunciarPedido();
             lastOrderCount = queue.length;
-            renderKitchen(queue);
+            currentQueue = queue; // Guardamos la lista nueva
+            renderKitchen();      // Dibujamos de inmediato
         });
 
         socket.on('cargar-pedidos', (queue) => {
             lastOrderCount = queue.length;
-            renderKitchen(queue);
+            currentQueue = queue; // Guardamos la lista inicial
+            renderKitchen();
         });
 
-        // Refrescar los relojes cada segundo
+        // --- RELOJ AUTOMÁTICO (MAGIA AQUÍ) ---
+        // Refresca la pantalla cada 1 segundo sin pedirle nada al servidor
         setInterval(() => {
-            socket.emit('solicitar-actualizacion'); // Opcional: para sincronizar tiempo
+            if (currentQueue.length > 0) {
+                renderKitchen(); 
+            }
         }, 1000);
     </script>
 </body>

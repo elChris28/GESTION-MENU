@@ -210,13 +210,23 @@ function renderTakeAwayList() {
 function closeAccount() {
     const total = parseFloat(document.getElementById('tableTotal').innerText);
     const metodo = document.getElementById('paymentMethod').value;
+    
     if (total <= 0) return;
 
     if(confirm(`¿Cerrar cuenta de S/ ${total.toFixed(2)}?`)) {
-        let sales = JSON.parse(localStorage.getItem('restoSales')) || [];
-        const newSales = orders[currentTable].map(i => ({ ...i, metodo, date: new Date().toLocaleDateString() }));
-        localStorage.setItem('restoSales', JSON.stringify([...sales, ...newSales]));
-        
+        // Preparamos los datos de la venta
+        const itemsToSell = orders[currentTable].map(item => ({
+            name: item.name,
+            quantity: item.quantity,
+            price: item.price,
+            metodo: metodo,
+            date: new Date().toLocaleDateString()
+        }));
+
+        // ENVIAR AL SERVIDOR EN TIEMPO REAL
+        socket.emit('registrar-venta', itemsToSell);
+
+        // Limpiar la mesa localmente
         if (currentTable.startsWith('TA-')) delete orders[currentTable];
         else orders[currentTable] = [];
         

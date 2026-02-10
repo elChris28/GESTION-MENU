@@ -31,8 +31,17 @@
     </div>
 
     <script>
-        function loadSales() {
-            const sales = JSON.parse(localStorage.getItem('restoSales')) || [];
+const socket = io();
+
+        // Escuchar cuando el servidor envíe el historial de ventas actualizado
+        socket.on('actualizar-ventas', (salesHistory) => {
+            renderSales(salesHistory);
+        });
+
+        // Pedir las ventas al conectar
+        socket.emit('solicitar-ventas');
+
+        function renderSales(sales) {
             const salesBody = document.getElementById('salesBody');
             const grandTotalSpan = document.getElementById('grandTotal');
             
@@ -41,7 +50,7 @@
             let grandTotal = 0;
 
             sales.forEach(item => {
-                // Resumen por plato
+                // Resumen por nombre de plato
                 if (!summary[item.name]) {
                     summary[item.name] = { quantity: 0, totalIncome: 0 };
                 }
@@ -49,7 +58,7 @@
                 summary[item.name].totalIncome += (item.price * item.quantity);
                 
                 // Resumen por método de pago
-                if (item.metodo) {
+                if (item.metodo && pagos.hasOwnProperty(item.metodo)) {
                     pagos[item.metodo] += (item.price * item.quantity);
                 }
                 
@@ -63,35 +72,36 @@
                     <tr>
                         <td><strong>${dish}</strong></td>
                         <td>${summary[dish].quantity} unid.</td>
-                        <td>$${summary[dish].totalIncome.toFixed(2)}</td>
+                        <td>S/ ${summary[dish].totalIncome.toFixed(2)}</td>
                     </tr>
                 `;
             }
 
-            // Dibujar Resumen de Pagos (Nuevo)
-            const resumenPagosDiv = document.getElementById('resumenPagos') || document.createElement('div');
-            resumenPagosDiv.id = 'resumenPagos';
+            // Dibujar Resumen de Pagos
+            let resumenPagosDiv = document.getElementById('resumenPagos');
+            if (!resumenPagosDiv) {
+                resumenPagosDiv = document.createElement('div');
+                resumenPagosDiv.id = 'resumenPagos';
+                document.querySelector('.container').insertBefore(resumenPagosDiv, document.querySelector('.total-box'));
+            }
+
             resumenPagosDiv.innerHTML = `
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 20px; background: #eee; padding: 15px; border-radius: 8px;">
-                    <p>💵 Efectivo: <strong>$${pagos["Efectivo"].toFixed(2)}</strong></p>
-                    <p>📱 Yape: <strong>$${pagos["Yape"].toFixed(2)}</strong></p>
-                    <p>💜 Plin: <strong>$${pagos["Plin"].toFixed(2)}</strong></p>
-                    <p>💳 Tarjeta: <strong>$${pagos["Tarjeta"].toFixed(2)}</strong></p>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 20px; background: #fff; border: 1px solid #ddd; padding: 15px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+                    <p style="margin: 5px 0;">💵 Efectivo: <strong>S/ ${pagos["Efectivo"].toFixed(2)}</strong></p>
+                    <p style="margin: 5px 0;">📱 Yape: <strong>S/ ${pagos["Yape"].toFixed(2)}</strong></p>
+                    <p style="margin: 5px 0;">💜 Plin: <strong>S/ ${pagos["Plin"].toFixed(2)}</strong></p>
+                    <p style="margin: 5px 0;">💳 Tarjeta: <strong>S/ ${pagos["Tarjeta"].toFixed(2)}</strong></p>
                 </div>
             `;
-            document.querySelector('.container').insertBefore(resumenPagosDiv, document.querySelector('.total-box'));
 
             grandTotalSpan.innerText = grandTotal.toFixed(2);
         }
 
         function clearSales() {
-            if(confirm("¿Estás seguro de que quieres borrar todo el historial de ventas?")) {
-                localStorage.removeItem('restoSales');
-                loadSales();
+            if(confirm("¿Estás seguro de que quieres borrar todo el historial de ventas del servidor?")) {
+                socket.emit('borrar-ventas');
             }
         }
-
-        loadSales();
     </script>
 </body>
 </html>
