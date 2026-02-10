@@ -72,6 +72,23 @@
         </div>
     </div>
 
+    <div class="admin-access" style="margin-top: 50px; padding: 20px; border-top: 2px solid #ddd; text-align: center;">
+        <h3>🔐 Acceso Restringido</h3>
+        <div style="display: flex; justify-content: center; gap: 10px; flex-wrap: wrap;">
+            <button onclick="checkAccess('ventas')" style="background: #27ae60;">📊 Ver Ventas</button>
+            <button onclick="checkAccess('cocina')" style="background: #e67e22;">👨‍🍳 Panel Cocina</button>
+        </div>
+    </div>
+
+    <div id="loginModal" class="modal">
+        <div class="modal-content" style="max-width: 300px; text-align: center;">
+            <h2 id="loginTitle">Ingresar</h2>
+            <input type="password" id="adminPass" placeholder="Contraseña" style="width: 80%; padding: 10px; margin-bottom: 15px;">
+            <button id="loginBtn" style="width: 100%;">Entrar</button>
+            <button class="btn-cancel" onclick="closeLogin()" style="margin-top: 10px;">Cancelar</button>
+        </div>
+    </div>
+
     <script src="script.js"></script>
 </body>
 </html>

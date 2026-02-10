@@ -178,3 +178,23 @@ button { cursor: pointer; border: none; padding: 10px 15px; border-radius: 5px; 
 .btn-delete-item:hover {
     background: #d63031;
 }
+
+.admin-access button {
+    padding: 12px 25px;
+    font-weight: bold;
+    border-radius: 8px;
+    transition: 0.3s;
+    font-size: 0.9em;
+}
+
+.admin-access button:hover {
+    opacity: 0.8;
+    transform: scale(1.05);
+}
+
+/* Ajuste para que el input de contraseña no sea gigante */
+#adminPass {
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    font-size: 1.1em;
+}

@@ -1,3 +1,50 @@
+///////////////////////////////////////////////////////////////////////////////////////
+// Configuración de accesos
+const PASSWORDS = {
+    ventas: "1234",  // Cambia esto por tu clave para ventas
+    cocina: "5678"   // Cambia esto por tu clave para cocina
+};
+
+let targetModule = "";
+
+function checkAccess(module) {
+    targetModule = module;
+    document.getElementById('loginTitle').innerText = "Acceso a " + module.toUpperCase();
+    document.getElementById('loginModal').style.display = 'block';
+    document.getElementById('adminPass').value = '';
+    document.getElementById('adminPass').focus();
+}
+
+function closeLogin() {
+    document.getElementById('loginModal').style.display = 'none';
+}
+
+// Lógica del botón de entrar dentro del modal de login
+document.getElementById('loginBtn').onclick = function() {
+    const enteredPass = document.getElementById('adminPass').value;
+    
+    if (enteredPass === PASSWORDS[targetModule]) {
+        if (targetModule === 'ventas') {
+            window.location.href = 'ventas.html';
+        } else if (targetModule === 'cocina') {
+            window.location.href = 'cocina.html';
+        }
+    } else {
+        alert("❌ Contraseña incorrecta");
+    }
+};
+
+// Cerrar login si presionan Enter
+document.getElementById('adminPass').addEventListener('keypress', function (e) {
+    if (e.key === 'Enter') {
+        document.getElementById('loginBtn').click();
+    }
+});
+
+
+
+///////////////////////////////////////////////////////////////////////////////////////
+
 let menu = JSON.parse(localStorage.getItem('restoMenu')) || [];
 let orders = JSON.parse(localStorage.getItem('restoOrders')) || {};
 let currentTable = null;
