@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reporte de Ventas | RestoFlow</title>
+    <link rel="stylesheet" href="styleVentas.css">
+</head>
+<body>
+    <div class="container">
+        <h1>📊 Reporte de Ventas Totales</h1>
+        <button onclick="window.location.reload()">🔄 Actualizar Datos</button>
+        <button class="btn-clear" onclick="clearSales()">🗑️ Borrar Historial</button>
+
+        <table id="salesTable">
+            <thead>
+                <tr>
+                    <th>Plato</th>
+                    <th>Cantidad Total</th>
+                    <th>Ingreso Total</th>
+                </tr>
+            </thead>
+            <tbody id="salesBody">
+                </tbody>
+        </table>
+
+        <div class="total-box">
+            Recaudación Total: $<span id="grandTotal">0.00</span>
+        </div>
+    </div>
+
+    <script>
+        function loadSales() {
+            const sales = JSON.parse(localStorage.getItem('restoSales')) || [];
+            const salesBody = document.getElementById('salesBody');
+            const grandTotalSpan = document.getElementById('grandTotal');
+            
+            const summary = {};
+            const pagos = { "Efectivo": 0, "Yape": 0, "Plin": 0, "Tarjeta": 0 };
+            let grandTotal = 0;
+
+            sales.forEach(item => {
+                // Resumen por plato
+                if (!summary[item.name]) {
+                    summary[item.name] = { quantity: 0, totalIncome: 0 };
+                }
+                summary[item.name].quantity += item.quantity;
+                summary[item.name].totalIncome += (item.price * item.quantity);
+                
+                // Resumen por método de pago
+                if (item.metodo) {
+                    pagos[item.metodo] += (item.price * item.quantity);
+                }
+                
+                grandTotal += (item.price * item.quantity);
+            });
+
+            // Dibujar Tabla de Platos
+            salesBody.innerHTML = '';
+            for (const dish in summary) {
+                salesBody.innerHTML += `
+                    <tr>
+                        <td><strong>${dish}</strong></td>
+                        <td>${summary[dish].quantity} unid.</td>
+                        <td>$${summary[dish].totalIncome.toFixed(2)}</td>
+                    </tr>
+                `;
+            }
+
+            // Dibujar Resumen de Pagos (Nuevo)
+            const resumenPagosDiv = document.getElementById('resumenPagos') || document.createElement('div');
+            resumenPagosDiv.id = 'resumenPagos';
+            resumenPagosDiv.innerHTML = `
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 20px; background: #eee; padding: 15px; border-radius: 8px;">
+                    <p>💵 Efectivo: <strong>$${pagos["Efectivo"].toFixed(2)}</strong></p>
+                    <p>📱 Yape: <strong>$${pagos["Yape"].toFixed(2)}</strong></p>
+                    <p>💜 Plin: <strong>$${pagos["Plin"].toFixed(2)}</strong></p>
+                    <p>💳 Tarjeta: <strong>$${pagos["Tarjeta"].toFixed(2)}</strong></p>
+                </div>
+            `;
+            document.querySelector('.container').insertBefore(resumenPagosDiv, document.querySelector('.total-box'));
+
+            grandTotalSpan.innerText = grandTotal.toFixed(2);
+        }
+
+        function clearSales() {
+            if(confirm("¿Estás seguro de que quieres borrar todo el historial de ventas?")) {
+                localStorage.removeItem('restoSales');
+                loadSales();
+            }
+        }
+
+        loadSales();
+    </script>
+</body>
+</html>

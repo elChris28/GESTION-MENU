@@ -1,0 +1,49 @@
+body { font-family: 'Segoe UI', sans-serif; background: #2c3e50; color: white; padding: 20px; }
+.kitchen-grid { display: flex; flex-wrap: wrap; gap: 20px; }
+.ticket { 
+            padding: 15px; 
+            border-radius: 10px; 
+            width: 280px; 
+            color: #333; 
+            transition: all 0.5s ease;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            position: relative;
+        }
+
+.ticket h3 { margin: 0; border-bottom: 1px solid rgba(0,0,0,0.1); padding-bottom: 5px; }
+
+.timer-green { background-color: #2ecc71 !important; color: white !important; }
+.timer-yellow { background-color: #f1c40f !important; color: #333 !important; }
+.timer-red { background-color: #e74c3c !important; color: white !important; }
+.timer-black { background-color: #000000 !important; color: #ff4757 !important; border: 2px solid red; }
+
+.ticket .time { font-size: 0.8em; color: #666; }
+.timer-display {
+    font-size: 2.5em;
+    font-weight: bold;
+    text-align: center;
+    margin: 10px 0;
+    font-family: monospace;
+}
+.ticket .details { font-style: italic; background: rgba(255,255,255,0.5); padding: 5px; display: block; margin-top: 5px;}
+.btn-done { background: white; color: #333; border: none; width: 100%; padding: 10px; margin-top: 10px; cursor: pointer; font-weight: bold; border-radius: 5px; }
+.btn-done:hover { background: #eee; }
+.items-list { background: rgba(255,255,255,0.2); padding: 10px; border-radius: 5px; }
+
+
+
+.order-item { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #eee; padding: 8px 0; }
+.sent-badge { background: #d4edda; color: #155724; font-size: 0.7em; padding: 2px 6px; border-radius: 4px; }
+.pending-badge { background: #fff3cd; color: #856404; font-size: 0.7em; padding: 2px 6px; border-radius: 4px; }
+.btn-mini { background: #e67e22; font-size: 0.7em; padding: 4px 8px; }
+.btn-send-all { background: #e74c3c; width: 100%; margin-bottom: 10px; font-weight: bold; }
+
+
+.ticket {
+    min-width: 280px;
+    height: fit-content; /* Para que el ticket crezca según la cantidad de platos */
+}
+
+.ticket strong {
+    color: #a24202; /* Color naranja oscuro para resaltar la cantidad y el nombre */
+}

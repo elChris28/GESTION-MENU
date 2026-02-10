@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel de Cocina | RestoFlow</title>
+    <link rel="stylesheet" href="styleCocina.css">
+</head>
+<body>
+    <h1>👨‍🍳 Comandas Recibidas</h1>
+    <div id="kitchenDisplay" class="kitchen-grid"></div>
+
+    <script>
+        // Variable para rastrear cuántos pedidos había antes
+            let lastOrderCount = (JSON.parse(localStorage.getItem('kitchenQueue')) || []).length;
+
+            // Función para calcular tiempo y color
+            function getTimerData(timestampEntrada) {
+                const ahora = Date.now();
+                const entrada = parseInt(timestampEntrada);
+                const tiempoTranscurridoMs = ahora - entrada;
+                const tiempoTotalPermitidoMs = 15 * 60 * 1000; // 15 minutos
+                
+                const tiempoRestanteMs = tiempoTotalPermitidoMs - tiempoTranscurridoMs;
+                const minutos = Math.floor(Math.abs(tiempoRestanteMs) / 60000);
+                const segundos = Math.floor((Math.abs(tiempoRestanteMs) % 60000) / 1000);
+                const tiempoFormateado = `${minutos}:${segundos < 10 ? '0' : ''}${segundos}`;
+
+                let colorClass = "";
+                let prefijo = "";
+
+                if (tiempoRestanteMs > 10 * 60 * 1000) {
+                    colorClass = "timer-green";
+                } else if (tiempoRestanteMs > 5 * 60 * 1000) {
+                    colorClass = "timer-yellow";
+                } else if (tiempoRestanteMs > 0) {
+                    colorClass = "timer-red";
+                } else {
+                    colorClass = "timer-black";
+                    prefijo = "RETRASO: +";
+                }
+
+                return { tiempoFormateado, colorClass, prefijo };
+            }
+
+            function renderKitchen() {
+                const queue = JSON.parse(localStorage.getItem('kitchenQueue')) || [];
+                const display = document.getElementById('kitchenDisplay');
+                display.innerHTML = '';
+
+                queue.forEach((ticket, ticketIndex) => {
+                    // Si el ticket no tiene 'timestamp', lo creamos (para pedidos viejos)
+                    if (!ticket.timestamp) ticket.timestamp = Date.now();
+
+                    const timer = getTimerData(ticket.timestamp);
+
+                    let itemsHtml = ticket.items.map(item => `
+                        <div style="border-bottom: 1px solid rgba(0,0,0,0.1); padding: 5px 0;">
+                            <strong style="font-size: 1.2em;">[ ${item.quantity} ] ${item.name}</strong>
+                            <div style="font-size: 0.9em; color: #444; margin-left: 10px; font-style: italic;">
+                                ${item.details ? '↳ ' + item.details : ''}
+                            </div>
+                        </div>
+                    `).join('');
+
+                    display.innerHTML += `
+                        <div class="ticket ${timer.colorClass}">
+                            <span>Llegada: ${ticket.time}</span>
+                            <h3>${ticket.table}</h3>
+                            <div class="timer-display">${timer.prefijo}${timer.tiempoFormateado}</div>
+                            <div class="items-list">
+                                ${itemsHtml}
+                            </div>
+                            <button class="btn-done" onclick="removeTicket(${ticketIndex})">✅ LISTO</button>
+                        </div>
+                    `;
+                });
+            }
+
+            // Función para que la IA hable
+            function anunciarPedido() {
+                const mensaje = new SpeechSynthesisUtterance("Orden de menú Zenilda");
+                mensaje.lang = 'es-ES'; // Idioma español
+                mensaje.rate = 1;      // Velocidad normal
+                window.speechSynthesis.speak(mensaje);
+            }
+
+            function removeTicket(index) {
+                let queue = JSON.parse(localStorage.getItem('kitchenQueue')) || [];
+                queue.splice(index, 1);
+                localStorage.setItem('kitchenQueue', JSON.stringify(queue));
+                // Actualizamos el contador para que no hable al borrar
+                lastOrderCount = queue.length; 
+                renderKitchen();
+            }
+
+            setInterval(renderKitchen, 1000);
+
+            // Escucha cambios en el localStorage
+            window.addEventListener('storage', () => {
+                const newQueue = JSON.parse(localStorage.getItem('kitchenQueue')) || [];
+                
+                // Si hay más pedidos que antes, significa que llegó uno nuevo
+                if (newQueue.length > lastOrderCount) {
+                    anunciarPedido();
+                }
+                
+                lastOrderCount = newQueue.length;
+                renderKitchen();
+            });
+
+            // Carga inicial
+            renderKitchen();
+    </script>
+</body>
+</html>

@@ -1,0 +1,180 @@
+:root {
+    --primary: #2ecc71;
+    --secondary: #3498db;
+    --dark: #2c3e50;
+    --light: #ecf0f1;
+}
+
+body { font-family: 'Segoe UI', sans-serif; background: var(--light); margin: 0; padding: 20px; }
+
+header { 
+    display: flex; 
+    flex-direction: column; /* Cambiamos a columna para que el título esté arriba */
+    gap: 15px;
+    background: white; 
+    padding: 20px; 
+    border-radius: 15px; 
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1); 
+    margin-bottom: 30px; 
+}
+
+/* Contenedor de inputs del menú */
+.menu-adder {
+    display: flex;
+    flex-wrap: wrap; /* Esto hace que si no cabe, baje a la siguiente línea */
+    gap: 10px;
+    width: 100%;
+    align-items: center;
+}
+
+/* Ajuste de los inputs para que se vean bien en móviles */
+.menu-adder input[type="text"] {
+    flex: 2; /* El nombre del plato toma más espacio */
+    min-width: 200px;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+}
+
+.menu-adder select {
+    flex: 1;
+    min-width: 150px;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    background: white;
+}
+
+.menu-adder input[type="number"] {
+    width: 80px;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+}
+
+.menu-adder button {
+    background: var(--primary);
+    font-weight: bold;
+    padding: 10px 20px;
+}
+
+.tables-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 20px; }
+
+.table-card { background: white; padding: 20px; border-radius: 12px; text-align: center; cursor: pointer; transition: 0.3s; border-bottom: 5px solid var(--primary); }
+.table-card:hover { transform: translateY(-5px); box-shadow: 0 10px 15px rgba(0,0,0,0.1); }
+.table-card.occupied { border-bottom-color: #e74c3c; }
+
+.modal { 
+    display: none; 
+    position: fixed; 
+    z-index: 1000; /* Asegura que esté por encima de todo */
+    top: 0; 
+    left: 0; 
+    width: 100%; 
+    height: 100%; 
+    background: rgba(0,0,0,0.6); 
+    overflow-y: auto; /* Permite scroll si el modal es más alto que la pantalla */
+    padding: 10px; /* Espacio para que no pegue a los bordes en el celular */
+    box-sizing: border-box;
+}
+
+/* El contenido blanco del modal */
+.modal-content { 
+    background: white; 
+    width: 95%; /* Casi todo el ancho en celulares */
+    max-width: 450px; /* Pero no más de 450px en computadoras */
+    margin: 20px auto; /* Menos margen arriba para aprovechar espacio */
+    padding: 20px; 
+    border-radius: 15px; 
+    position: relative;
+    max-height: 90vh; /* Que no mida más del 90% de la altura de la pantalla */
+    overflow-y: auto; /* IMPORTANTE: Permite hacer scroll interno si hay muchos platos */
+    box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+}
+
+#currentOrderList {
+    max-height: 200px; /* Altura máxima para la lista de platos */
+    overflow-y: auto; /* Scroll interno solo para los platos */
+    margin: 10px 0;
+    padding: 0;
+    list-style: none;
+    border: 1px solid #eee;
+    border-radius: 8px;
+}
+
+.order-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px;
+    border-bottom: 1px solid #eee;
+    font-size: 0.9em;
+}
+
+textarea { width: 100%; margin: 10px 0; height: 60px; border-radius: 5px; border: 1px solid #ccc; padding: 5px; }
+select { width: 100%; padding: 10px; margin-bottom: 10px; }
+button { cursor: pointer; border: none; padding: 10px 15px; border-radius: 5px; background: var(--secondary); color: white; }
+
+.menu-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    margin-top: 10px;
+}
+
+.badge { 
+    background: #f0f2f5; 
+    padding: 8px 12px; 
+    border-radius: 8px; 
+    border-left: 4px solid var(--secondary);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.85em; 
+    box-shadow: 2px 2px 5px rgba(0,0,0,0.05);
+}
+.btn-close-account { background: #27ae60; width: 100%; font-weight: bold; margin-top: 15px; padding: 15px; }
+.btn-cancel { background: #95a5a6; width: 100%; margin-top: 5px; }
+.total-section { background: #f9f9f9; padding: 15px; border-radius: 10px; border: 1px dashed #27ae60; margin-top: 10px; }
+.total-section h3 {
+    margin: 5px 0;
+    font-size: 1.2em;
+}
+.occupied { background: #fdeaea !important; }
+
+
+.take-away-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    gap: 10px;
+    margin-top: 15px;
+}
+
+.btn-add-takeaway {
+    background: #f39c12;
+    width: 100%;
+    font-weight: bold;
+    color: white;
+    padding: 10px;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+}
+
+.table-card.special {
+    border-bottom: 5px solid #f39c12;
+    min-height: 80px;
+}   
+
+.btn-delete-item {
+    background: #ff7675;
+    color: white;
+    border: none;
+    padding: 5px 8px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.8em;
+}
+.btn-delete-item:hover {
+    background: #d63031;
+}

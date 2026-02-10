@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RestoFlow | Gestión de Mesas</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+        <h1>🚀 RestoFlow</h1>
+        
+        <div class="menu-adder">
+            <input type="text" id="newDish" placeholder="Nombre del Plato (ej: Seco de Pollo)">
+            
+            <select id="dishCategory" style="padding: 5px; border-radius: 4px;">
+                <option value="🍱 MENÚ">🍱 MENÚ (S/ 10.00)</option>
+                <option value="🍛 SEGUNDO">🍛 SOLO SEGUNDO (S/ 9.00)</option>
+                <option value="🥗 ENTRADA">🥗 SOLO ENTRADA (S/ 3.50)</option>
+                <option value="🍵 SOPA">🍵 SOPA (S/ 5.00)</option>
+                <option value="🥤 OTROS">🥤 OTROS / EXTRAS</option>
+            </select>
+
+            <input type="number" id="dishPrice" placeholder="S/" style="width: 80px;">
+            <button onclick="addDish()">➕ Agregar</button>
+        </div>
+        
+        <div id="menuListDisplay" class="menu-tags"></div>
+    </header>
+
+    <main>
+        <section class="tables-grid" id="tablesContainer">
+            </section>
+
+        <aside class="take-away">
+            <h2>🛍️ Para Llevar (Pedidos Individuales)</h2>
+            <button class="btn-add-takeaway" onclick="createNewTakeAway()">+ Nuevo Pedido para Llevar</button>
+            <div id="takeAwayList" class="take-away-container"></div>
+        </aside>
+    </main>
+
+    <div id="orderModal" class="modal">
+        <div class="modal-content">
+            <h2 id="modalTitle">Mesa X</h2>
+            <div class="order-form">
+                <div style="display: flex; gap: 10px;">
+                    <select id="dishSelect" style="flex: 3;"></select>
+                    <input type="number" id="dishQuantity" value="1" min="1" style="flex: 1; width: 50px; padding: 5px;">
+                </div>
+                <textarea id="orderDetails" placeholder="Detalles del pedido..."></textarea>
+                <button class="btn-add" onclick="saveOrder()">Añadir a Pedido</button>
+            </div>
+            <hr>
+            <ul id="currentOrderList"></ul>
+                <div class="total-section">
+                    <h3>Total: $<span id="tableTotal">0</span></h3>
+
+                    <div style="margin-bottom: 15px; text-align: left;">
+                        <label for="paymentMethod" style="font-size: 0.9em; font-weight: bold;">Método de Pago:</label>
+                        <select id="paymentMethod" style="width: 100%; padding: 8px; margin-top: 5px; border-radius: 5px; border: 1px solid #27ae60;">
+                            <option value="Efectivo">💵 Efectivo</option>
+                            <option value="Yape">📱 Yape</option>
+                            <option value="Plin">💜 Plin</option>
+                            <option value="Tarjeta">💳 Tarjeta</option>
+                        </select>
+                    </div>
+
+                    <button class="btn-send-all" onclick="sendToKitchen()">🔥 Enviar TODO a Cocina</button>
+                    <button class="btn-close-account" onclick="closeAccount()">💰 Cerrar Cuenta</button>
+                </div>
+            <button class="btn-cancel" onclick="closeModal()">Volver</button>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
