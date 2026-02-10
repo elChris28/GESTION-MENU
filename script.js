@@ -1,8 +1,9 @@
-///////////////////////////////////////////////////////////////////////////////////////
+const socket = io(); // Conexión en tiempo real
+
 // Configuración de accesos
 const PASSWORDS = {
-    ventas: "1234",  // Cambia esto por tu clave para ventas
-    cocina: "5678"   // Cambia esto por tu clave para cocina
+    ventas: "1234",
+    cocina: "5678"
 };
 
 let targetModule = "";
@@ -19,94 +20,66 @@ function closeLogin() {
     document.getElementById('loginModal').style.display = 'none';
 }
 
-// Lógica del botón de entrar dentro del modal de login
 document.getElementById('loginBtn').onclick = function() {
     const enteredPass = document.getElementById('adminPass').value;
-    
     if (enteredPass === PASSWORDS[targetModule]) {
-        if (targetModule === 'ventas') {
-            window.location.href = 'ventas.html';
-        } else if (targetModule === 'cocina') {
-            window.location.href = 'cocina.html';
-        }
+        window.location.href = targetModule + '.html';
     } else {
         alert("❌ Contraseña incorrecta");
     }
 };
 
-// Cerrar login si presionan Enter
-document.getElementById('adminPass').addEventListener('keypress', function (e) {
-    if (e.key === 'Enter') {
-        document.getElementById('loginBtn').click();
-    }
-});
-
-
-
-///////////////////////////////////////////////////////////////////////////////////////
-
+// --- LÓGICA DEL SISTEMA ---
 let menu = JSON.parse(localStorage.getItem('restoMenu')) || [];
 let orders = JSON.parse(localStorage.getItem('restoOrders')) || {};
 let currentTable = null;
 
-// Inicialización de mesas y persistencia
 function init() {
     const container = document.getElementById('tablesContainer');
     if (!container) return; 
     container.innerHTML = '';
     
     for (let i = 1; i <= 10; i++) {
-        // IMPORTANTE: Guardamos el ID como String
         const mesaId = i.toString(); 
         if (!orders[mesaId]) orders[mesaId] = [];
-        
         const isOccupied = orders[mesaId].length > 0;
         container.innerHTML += `
-            <div class="table-card ${isOccupied ? 'occupied' : ''}" id="mesa-${mesaId}" onclick="openModal('${mesaId}')">
+            <div class="table-card ${isOccupied ? 'occupied' : ''}" onclick="openModal('${mesaId}')">
                 <h3>Mesa ${mesaId}</h3>
-                <p id="status-${mesaId}">${isOccupied ? 'Ocupada' : 'Libre'}</p>
-            </div>
-        `;
+                <p>${isOccupied ? 'Ocupada' : 'Libre'}</p>
+            </div>`;
     }
     updateMenuUI();
     renderTakeAwayList();
 }
 
-// Gestión de Menú
 function addDish() {
     const name = document.getElementById('newDish').value;
     const price = document.getElementById('dishPrice').value;
-    const category = document.getElementById('dishCategory').value; // Nueva categoría
+    const category = document.getElementById('dishCategory').value;
 
     if (name && price) {
         menu.push({ 
             id: Date.now(), 
-            name: `${category}: ${name}`, // Guardamos el nombre con su categoría
+            name: `${category}: ${name}`, 
             price: parseFloat(price),
-            baseCategory: category // Para lógica interna
+            baseCategory: category 
         });
-        
-        // Limpiar campos
+        saveAndRefresh();
         document.getElementById('newDish').value = '';
         document.getElementById('dishPrice').value = '';
-        
-        saveAndRefresh();
     }
-}
-
-function deleteDish(id) {
-    menu = menu.filter(dish => dish.id !== id);
-    saveAndRefresh();
 }
 
 function updateMenuUI() {
     const select = document.getElementById('dishSelect');
     const display = document.getElementById('menuListDisplay');
+    if(!select || !display) return;
     select.innerHTML = '';
     display.innerHTML = '';
     
     menu.forEach(dish => {
-        select.innerHTML += `<option value="${dish.id}">${dish.name} ($${dish.price})</option>`;
+        select.innerHTML += `<option value="${dish.id}">${dish.name} (S/ ${dish.price})</option>`;
         display.innerHTML += `
             <span class="badge">${dish.name} 
                 <b onclick="deleteDish(${dish.id})" style="color:red; cursor:pointer"> (x)</b>
@@ -114,8 +87,6 @@ function updateMenuUI() {
     });
 }
 
-
-// Gestión de Pedidos y Cuenta
 function saveOrder() {
     const dishId = document.getElementById('dishSelect').value;
     const quantity = parseInt(document.getElementById('dishQuantity').value) || 1;
@@ -123,7 +94,6 @@ function saveOrder() {
     const dishFound = menu.find(d => d.id == dishId);
 
     if (dishFound) {
-        // 1. Agregar el plato seleccionado
         orders[currentTable].push({ 
             ...dishFound, 
             quantity: quantity, 
@@ -131,7 +101,6 @@ function saveOrder() {
             sent: false 
         });
 
-        // 2. Lógica Automática: Si es pedido "Para Llevar", agregar S/ 1.00 por cada plato
         if (currentTable.toString().startsWith('TA-')) {
             orders[currentTable].push({
                 id: "taper-" + Date.now(),
@@ -139,79 +108,45 @@ function saveOrder() {
                 price: 1.00,
                 quantity: quantity,
                 details: "Envase para llevar",
-                sent: true // No necesita ir a cocina
+                sent: true 
             });
         }
-        
         saveAndRefresh();
         renderOrders();
     }
 }
 
-
-// 2. Nueva función para BORRAR un plato de la mesa
-function deleteOrderItem(index) {
-    if (confirm("¿Eliminar este plato del pedido?")) {
-        orders[currentTable].splice(index, 1);
-        saveAndRefresh();
-        renderOrders();
-    }
-}
-
-// Nueva función para enviar a cocina
 function sendToKitchen(index = null) {
-    let kitchenQueue = JSON.parse(localStorage.getItem('kitchenQueue')) || [];
     let tableIdStr = currentTable.toString();
     let tableLabel = tableIdStr.startsWith('TA-') ? "Llevar" : `Mesa ${tableIdStr}`;
     let time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-    let currentTimeStamp = Date.now(); 
 
+    let itemsToSend = [];
     if (index !== null) {
-        // --- ENVÍO INDIVIDUAL ---
         let order = orders[tableIdStr][index];
         if (order.sent) return;
-
-        kitchenQueue.push({
-            table: tableLabel,
-            time: time,
-            timestamp: currentTimeStamp,
-            isGrouped: false,
-            items: [{ 
-                name: order.name, 
-                quantity: order.quantity, 
-                details: order.details // <-- Detalle recuperado
-            }]
-        });
+        itemsToSend.push({ name: order.name, quantity: order.quantity, details: order.details });
         order.sent = true;
     } else {
-        // --- ENVÍO AGRUPADO (TODO) ---
-        let pendingItems = orders[tableIdStr].filter(order => !order.sent);
-        if (pendingItems.length === 0) return;
-
-        kitchenQueue.push({
-            table: tableLabel,
-            time: time,
-            timestamp: currentTimeStamp,
-            isGrouped: true,
-            items: pendingItems.map(p => ({ 
-                name: p.name, 
-                quantity: p.quantity, 
-                details: p.details // <-- Detalle recuperado
-            }))
-        });
-
-        orders[tableIdStr].forEach(order => order.sent = true);
+        let pending = orders[tableIdStr].filter(o => !o.sent);
+        if (pending.length === 0) return;
+        itemsToSend = pending.map(p => ({ name: p.name, quantity: p.quantity, details: p.details }));
+        orders[tableIdStr].forEach(o => o.sent = true);
     }
 
-    localStorage.setItem('kitchenQueue', JSON.stringify(kitchenQueue));
-    localStorage.setItem('restoOrders', JSON.stringify(orders)); 
-    
+    // ENVÍO EN TIEMPO REAL AL SERVIDOR
+    socket.emit('nuevo-pedido', {
+        table: tableLabel,
+        time: time,
+        timestamp: Date.now(),
+        items: itemsToSend
+    });
+
+    saveAndRefresh();
     renderOrders();
-    init(); 
-    alert("¡Pedido enviado a cocina!");
+    alert("🔥 ¡Pedido enviado a cocina!");
 }
 
-// Modifica renderOrders para que muestre el botón individual y el estado
 function renderOrders() {
     const list = document.getElementById('currentOrderList');
     const totalSpan = document.getElementById('tableTotal');
@@ -219,18 +154,15 @@ function renderOrders() {
     list.innerHTML = '';
     
     orders[currentTable].forEach((order, index) => {
-        const statusClass = order.sent ? 'sent-badge' : 'pending-badge';
-        const statusText = order.sent ? 'En Cocina' : 'Pendiente';
-        
         list.innerHTML += `
             <li class="order-item">
                 <div style="flex-grow: 1;">
                     <strong>(${order.quantity}x) ${order.name}</strong> 
-                    <span class="${statusClass}">${statusText}</span><br>
-                    <small>${order.details}</small>
+                    <span class="${order.sent ? 'sent-badge' : 'pending-badge'}">${order.sent ? 'En Cocina' : 'Pendiente'}</span><br>
+                    <small>${order.details || ''}</small>
                 </div>
                 <div style="display: flex; gap: 5px;">
-                    ${!order.sent ? `<button class="btn-mini" onclick="sendToKitchen(${index})">👨‍🍳 Enviar</button>` : ''}
+                    ${!order.sent ? `<button onclick="sendToKitchen(${index})">👨‍🍳</button>` : ''}
                     <button class="btn-delete-item" onclick="deleteOrderItem(${index})">🗑️</button>
                 </div>
             </li>`;
@@ -239,107 +171,64 @@ function renderOrders() {
     totalSpan.innerText = total.toFixed(2);
 }
 
-// FUNCIÓN PARA CERRAR EL MODAL (El botón Volver)
-function closeModal() {
-    document.getElementById('orderModal').style.display = 'none';
+function deleteOrderItem(index) {
+    orders[currentTable].splice(index, 1);
+    saveAndRefresh();
+    renderOrders();
 }
 
-// FUNCIÓN PARA CREAR NUEVOS PEDIDOS "PARA LLEVAR"
+function openModal(tableId) {
+    currentTable = tableId;
+    document.getElementById('modalTitle').innerText = tableId.startsWith('TA-') ? "🛍️ Llevar" : "Mesa " + tableId;
+    document.getElementById('orderModal').style.display = 'block';
+    renderOrders();
+}
+
+function closeModal() { document.getElementById('orderModal').style.display = 'none'; }
+
 function createNewTakeAway() {
-    const id = "TA-" + Date.now(); // ID único
+    const id = "TA-" + Date.now();
     orders[id] = []; 
     saveAndRefresh();
     openModal(id);
 }
 
-// FUNCIÓN PARA RENDERIZAR LA LISTA DE PEDIDOS PARA LLEVAR
 function renderTakeAwayList() {
-    const listContainer = document.getElementById('takeAwayList');
-    if(!listContainer) return; // Por si el elemento no existe aún
-    
-    listContainer.innerHTML = '';
-
+    const container = document.getElementById('takeAwayList');
+    if(!container) return;
+    container.innerHTML = '';
     Object.keys(orders).forEach(id => {
-        if (id.toString().startsWith('TA-')) {
-            const numPedido = id.split('-')[1].slice(-4);
-            const isOccupied = orders[id].length > 0;
-            
-            listContainer.innerHTML += `
-                <div class="table-card special ${isOccupied ? 'occupied' : ''}" onclick="openModal('${id}')">
-                    <h4>Pedido #${numPedido}</h4>
-                    <p>${orders[id].length} platos</p>
-                    <small>Para llevar</small>
-                </div>
-            `;
+        if (id.startsWith('TA-')) {
+            container.innerHTML += `<div class="table-card special ${orders[id].length > 0 ? 'occupied' : ''}" onclick="openModal('${id}')">
+                <h4>Pedido #${id.slice(-4)}</h4>
+                <p>${orders[id].length} platos</p>
+            </div>`;
         }
     });
 }
 
-
-// 4. Ajuste en el Modal Title (dentro de openModal)
-function openModal(tableId) {
-    currentTable = tableId;
-    let title = "";
-    if (tableId.toString().startsWith('TA-')) {
-        title = "🛍️ Pedido Llevar #" + tableId.split('-')[1].slice(-4);
-    } else {
-        title = "Mesa " + tableId;
-    }
-    
-    document.getElementById('modalTitle').innerText = title;
-    document.getElementById('orderModal').style.display = 'block';
-    document.getElementById('orderDetails').value = '';
-    renderOrders();
-}
-
-// 5. Ajuste en cerrar cuenta (para que borre el pedido de llevar de la lista)
 function closeAccount() {
     const total = parseFloat(document.getElementById('tableTotal').innerText);
-    const metodo = document.getElementById('paymentMethod').value; // Captura el método elegido
-    
-    if (total <= 0) {
-        alert("No hay consumos en esta mesa.");
-        return;
-    }
+    const metodo = document.getElementById('paymentMethod').value;
+    if (total <= 0) return;
 
-    if(confirm(`¿Cerrar cuenta de $${total.toFixed(2)} con pago en ${metodo}?`)) {
+    if(confirm(`¿Cerrar cuenta de S/ ${total.toFixed(2)}?`)) {
+        let sales = JSON.parse(localStorage.getItem('restoSales')) || [];
+        const newSales = orders[currentTable].map(i => ({ ...i, metodo, date: new Date().toLocaleDateString() }));
+        localStorage.setItem('restoSales', JSON.stringify([...sales, ...newSales]));
         
-        let salesHistory = JSON.parse(localStorage.getItem('restoSales')) || [];
-        
-        // Guardamos los datos incluyendo el método de pago
-        const itemsToSell = orders[currentTable].map(item => ({
-            name: item.name,
-            quantity: item.quantity,
-            price: item.price,
-            metodo: metodo, // <--- Guardamos el método aquí
-            date: new Date().toLocaleDateString(),
-            time: new Date().toLocaleTimeString()
-        }));
-
-        salesHistory = [...salesHistory, ...itemsToSell];
-        localStorage.setItem('restoSales', JSON.stringify(salesHistory));
-
-        // Limpiar mesa
-        if (currentTable.toString().startsWith('TA-')) {
-            delete orders[currentTable];
-        } else {
-            orders[currentTable] = [];
-        }
+        if (currentTable.startsWith('TA-')) delete orders[currentTable];
+        else orders[currentTable] = [];
         
         saveAndRefresh();
         closeModal();
     }
 }
 
-// 6. Actualizar saveAndRefresh
 function saveAndRefresh() {
     localStorage.setItem('restoMenu', JSON.stringify(menu));
     localStorage.setItem('restoOrders', JSON.stringify(orders));
-    updateMenuUI();
-    renderTakeAwayList(); // Actualizar la lista de llevar
-    // Recargar visual de mesas sin re-renderizar todo el DOM si es posible, 
-    // o simplemente llamar a init() para simplificar:
-    init(); 
+    init();
 }
 
-init(); // Iniciar al cargar
+init();
